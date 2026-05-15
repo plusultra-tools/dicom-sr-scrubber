@@ -1,0 +1,221 @@
+# dicom-sr-scrubber — regulatory citation map
+# Each entry cites the primary source clause that mandates or justifies a
+# given scrubbing action on a DICOM attribute or SR content ValueType.
+# Verbatim excerpts are included where copyright and fair-use permit.
+
+---
+
+dicom_ps3_3:
+  source: "DICOM PS3.3 (2024c) — Information Object Definitions"
+  url: "https://dicom.nema.org/medical/dicom/current/output/html/part03.html"
+  entries:
+    - tag: "(0040,A040)"
+      keyword: "ValueType"
+      section: "C.17.3.1 — SR Document Content Module"
+      note: >
+        ValueType defines the kind of data stored in a content item.
+        PNAME is defined as 'Person Name' — a person name value with DICOM
+        PN VR encoding. TEXT is 'Text Value' — a text string.
+        Both are primary PHI carriers in the SR content tree.
+
+    - tag: "(0040,A730)"
+      keyword: "ContentSequence"
+      section: "C.17.3.1 — SR Document Content Module"
+      note: >
+        ContentSequence is the recursive structure that contains the SR
+        content items. The scrubber walker traverses this sequence.
+
+    - tag: "(0040,A160)"
+      keyword: "TextValue"
+      section: "C.17.3.3.5 — TEXT Content Item"
+      note: >
+        TextValue contains unrestricted text; free-text findings are the
+        highest-risk PHI surface because they may contain patient names,
+        dates, or identifiers in narrative form.
+
+    - tag: "(0040,A123)"
+      keyword: "PersonName"
+      section: "C.17.3.3.8 — PNAME Content Item"
+      note: >
+        PersonName encodes a person name as a PN VR. Any PNAME content
+        item is by definition a person-name identifier and is always scrubbed.
+
+    - tag: "(0040,A121)"
+      keyword: "Date"
+      section: "C.17.3.3.3 — DATE Content Item"
+      note: >
+        Date encodes a date (YYYYMMDD). Under HIPAA Safe Harbor, dates
+        other than year must be removed or generalised for individuals
+        over 89; year-only generalisation is the common research-grade choice.
+
+    - tag: "(0040,A122)"
+      keyword: "Time"
+      section: "C.17.3.3.4 — TIME Content Item"
+      note: >
+        Time encodes a time-of-day value. When combined with date this
+        substantially narrows re-identification risk; stripped to 000000.
+
+    - tag: "(0040,A124)"
+      keyword: "UID"
+      section: "C.17.3.3.9 — UIDREF Content Item"
+      note: >
+        UID values reference DICOM objects (series, instances) and are
+        linkable to patient records in the source PACS. Replaced with
+        deterministic hash-derived UIDs to preserve referential integrity
+        within the report while breaking external linkability.
+
+    - tag: "(0040,A504)"
+      keyword: "ContentTemplateSequence"
+      section: "C.17.3.3.11 — COMPOSITE Content Item"
+      note: >
+        COMPOSITE items reference SOP instances; the SOPInstanceUID inside
+        the ReferencedSOPSequence is a direct PACS linkage point.
+        Replaced with a placeholder UID in conservative mode.
+
+    - tag: "(0010,0010)"
+      keyword: "PatientName"
+      section: "C.7.1.1 — Patient Module"
+      note: >
+        PatientName is the primary patient-identity tag at the DICOM header
+        level. Replaced with a deterministic hash (SHA-256 of original +
+        per-run salt, truncated to PN-compatible format).
+
+    - tag: "(0008,1048)"
+      keyword: "PhysiciansOfRecord"
+      section: "C.7.3.1 — General Study Module"
+      note: >
+        Physician of record name. HIPAA Safe Harbor identifier 17
+        ('Account numbers, certificate/license numbers, VINs, device
+        identifiers') and identifier 2 ('Geographic data, all elements
+        smaller than a State') — physician name is covered under item 1
+        ('Names').
+
+    - tag: "(0008,1050)"
+      keyword: "PerformingPhysicianName"
+      section: "C.7.5.1 — General Series Module"
+      note: >
+        Performing physician's name. Covered under HIPAA Safe Harbor
+        identifier 1 ('Names').
+
+    - tag: "(0008,1060)"
+      keyword: "NameOfPhysiciansReadingStudy"
+      section: "C.7.3.1 — General Study Module"
+      note: >
+        Name of physicians reading study. Covered under HIPAA Safe Harbor
+        identifier 1 ('Names').
+
+    - tag: "(0008,0090)"
+      keyword: "ReferringPhysicianName"
+      section: "C.7.3.1 — General Study Module"
+      note: >
+        Referring physician's name. Covered under HIPAA Safe Harbor
+        identifier 1 ('Names').
+
+    - tag: "(0070,0084)"
+      keyword: "ContentCreatorName"
+      section: "C.10.4 — Content Identification Macro"
+      note: >
+        Name of operator who created the SR content. Covered under HIPAA
+        Safe Harbor identifier 1 ('Names').
+
+hipaa_safe_harbor:
+  source: "45 CFR § 164.514(b)(2) — Safe Harbor Method"
+  url: "https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-E/section-164.514"
+  verbatim_identifiers:
+    - id: 1
+      text: "Names"
+    - id: 2
+      text: >
+        "All geographic data smaller than a State, except for the initial
+        three digits of a zip code if, according to the current publicly
+        available data from the Bureau of the Census: (A) The geographic
+        unit formed by combining all zip codes with the same three initial
+        digits contains more than 20,000 people; and (B) The initial three
+        digits of a zip code for all such geographic units containing 20,000
+        or fewer people is changed to 000"
+    - id: 3
+      text: >
+        "All elements of dates (except year) for dates that are directly
+        related to an individual, including birth date, admission date,
+        discharge date, date of death, and all ages over 89 and all elements
+        of dates (including year) indicative of such age, except that such
+        ages and elements may be aggregated into a single category of age 90
+        or older"
+    - id: 4
+      text: "Telephone numbers"
+    - id: 5
+      text: "Fax numbers"
+    - id: 6
+      text: "Electronic mail addresses"
+    - id: 7
+      text: "Social security numbers"
+    - id: 8
+      text: "Medical record numbers"
+    - id: 9
+      text: "Health plan beneficiary numbers"
+    - id: 10
+      text: "Account numbers"
+    - id: 11
+      text: "Certificate/license numbers"
+    - id: 12
+      text: "Vehicle identifiers and serial numbers, including license plate numbers"
+    - id: 13
+      text: "Device identifiers and serial numbers"
+    - id: 14
+      text: "Web universal resource locators (URLs)"
+    - id: 15
+      text: "Internet protocol (IP) address numbers"
+    - id: 16
+      text: "Biometric identifiers, including finger and voice prints"
+    - id: 17
+      text: "Full face photographs and any comparable images"
+    - id: 18
+      text: >
+        "Any other unique identifying number, characteristic, or code,
+        except as permitted by paragraph (c) of this section"
+
+gdpr:
+  source: "Regulation (EU) 2016/679 (GDPR)"
+  url: "https://gdpr-info.eu/"
+  entries:
+    - article: "Art. 4(1)"
+      title: "Definition of personal data"
+      note: >
+        'Any information relating to an identified or identifiable natural
+        person ('data subject'). An identifiable natural person is one who
+        can be identified, directly or indirectly, in particular by reference
+        to an identifier such as a name, an identification number, location
+        data, an online identifier or to one or more factors specific to the
+        physical, physiological, genetic, mental, economic, cultural or
+        social identity of that natural person.'
+        DICOM PNAME and free-text fields in SR content items fall squarely
+        within this definition.
+
+    - article: "Art. 9(1)"
+      title: "Special categories of personal data (health data)"
+      note: >
+        'Processing of data concerning health' is a special category
+        requiring explicit legal basis. DICOM SR objects containing
+        clinical findings, diagnoses, and measurements constitute health
+        data under GDPR.
+
+    - article: "Art. 35"
+      title: "Data Protection Impact Assessment (DPIA)"
+      note: >
+        Art. 35(3)(b): DPIA is required for 'processing on a large scale
+        of special categories of data referred to in Article 9(1)'.
+        The audit manifest produced by dicom-sr-scrubber (sr_evidence.json
+        + audit.sha256) supports the DPIA documentation requirement by
+        providing a per-item record of processing actions taken.
+
+    - article: "Recital 26"
+      title: "Anonymisation standard"
+      note: >
+        'The principles of data protection should therefore not apply to
+        anonymous information, namely information which does not relate to
+        an identified or identifiable natural person or to personal data
+        rendered anonymous in such a manner that the data subject is not or
+        no longer identifiable.'
+        Scrubbing SR content trees is a step toward meeting this standard;
+        it must be combined with top-level tag scrubbing (e.g. via dcm-anon)
+        to constitute full anonymisation.

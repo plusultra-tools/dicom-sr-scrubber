@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dicom-sr-scrubber"
+version = "0.1.0"
+description = "PHI scrubber for DICOM Structured Report (SR) content trees. The piece dcm-anon deliberately does not ship."
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "plusUltra Labs", email = "plusultra.dev@proton.me"},
+]
+requires-python = ">=3.10"
+keywords = [
+    "dicom", "phi", "anonymisation", "de-identification", "structured-report",
+    "medical-imaging", "hipaa", "gdpr", "pydicom", "radiology", "pacs",
+    "nema", "healthtech", "biomed",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "pydicom>=2.4",
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.4",
+    "mypy>=1.8",
+    "build>=1.0",
+    "types-PyYAML>=6.0",
+]
+
+[project.scripts]
+dicom-sr-scrubber = "dicom_sr_scrubber.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+dicom_sr_scrubber = ["py.typed"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "RUF"]
+ignore = ["E501", "B904"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--tb=short"
