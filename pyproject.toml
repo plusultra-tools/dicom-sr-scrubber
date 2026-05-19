@@ -46,6 +46,11 @@ dev = [
     "types-PyYAML>=6.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/plusultra-tools/dicom-sr-scrubber"
+Issues = "https://github.com/plusultra-tools/dicom-sr-scrubber/issues"
+Changelog = "https://github.com/plusultra-tools/dicom-sr-scrubber/blob/main/CHANGELOG.md"
+
 [project.scripts]
 dicom-sr-scrubber = "dicom_sr_scrubber.cli:main"
 
