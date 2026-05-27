@@ -1,13 +1,21 @@
 # dicom-sr-scrubber
 
-**Parses and scrubs PHI from DICOM Structured Report (SR) content trees.** The piece `dcm-anon` deliberately does not ship — single `pip install`, single command, recursive walk over the SR `ContentSequence`, audit log of every item touched.
+**Parses and scrubs PHI from DICOM Structured Report (SR) content trees.** The piece `dcm-anon` deliberately does not ship. Single `pip install`, single command, recursive walk over the SR `ContentSequence`, audit log of every item touched.
+
+## Pricing
+
+- **CLI (Free)**. OSS Python CLI, MIT-licensed, recursive SR ContentSequence walk.
+- **Vault add-on (€29/mo)**. Add-on tier inside dcm-anon-vault Phase 2 hosted SaaS: SR scrubbing in the pipeline plus per-item audit log.
+
+[Stripe Payment Link (wiring 2026-05-21)]. See `pricing.md` for tier details.
+
 
 ```bash
 pip install dicom-sr-scrubber
 dicom-sr-scrub input.dcm output.dcm
 ```
 
-Pairs with [dcm-anon](https://github.com/plusultra/dicom-anon-api) — the recommended pipeline is:
+Pairs with [dcm-anon](https://github.com/plusultra/dicom-anon-api). The recommended pipeline is:
 
 ```bash
 dcm-anon scrub raw.dcm clean.dcm        # top-level tags + nested sequences
@@ -49,13 +57,13 @@ hand-written profiles per institution.
 
 ## What it does
 
-1. `pip install dicom-sr-scrubber` — pure Python, single dependency
+1. `pip install dicom-sr-scrubber`: pure Python, single dependency
    (`pydicom>=2.4`).
-2. `dicom-sr-scrub scrub input.dcm output.dcm` — recursively walks
+2. `dicom-sr-scrub scrub input.dcm output.dcm`: recursively walks
    `ContentSequence`, applies per-`ValueType` PHI rules, writes a new
    DICOM file with the SR content tree cleaned, leaves all non-SR
    pixel/metadata untouched.
-3. `dicom-sr-scrub verify output.dcm` — re-parses the scrubbed file and
+3. `dicom-sr-scrub verify output.dcm`: re-parses the scrubbed file and
    reports whether any PHI pattern survived in the SR content tree.
    Exit `0` = clean, exit `1` = residual PHI.
 4. Every scrub run emits an **audit log** (JSON) listing every content
@@ -79,7 +87,7 @@ hand-written profiles per institution.
 | `IMAGE` / `WAVEFORM` / `SCOORD` / `TCOORD` | Keep coordinate / reference fields, strip embedded annotation text if any. | Geometry is not PHI; text overlays may be. |
 | `CONTAINER` | Recurse into child `ContentSequence`. | Containers are structural, not data. |
 
-Rules are pluggable — drop a Python module implementing the
+Rules are pluggable. Drop a Python module implementing the
 `PhiRule` protocol in `~/.config/dicom-sr-scrubber/rules.d/` and it is
 loaded at startup.
 
@@ -112,20 +120,20 @@ loaded at startup.
 ## Pricing
 
 - **CLI: MIT, free, forever.**
-- **Hosted add-on on the `dcm-anon` Phase 2 plan** — €19–29/mo,
+- **Hosted add-on on the `dcm-anon` Phase 2 plan**: €19–29/mo,
   bundles SR scrubbing into the same hosted batch pipeline (drop a
   DICOM folder, get a scrubbed folder plus audit log back). Stripe
   billing once the demand signal justifies it.
 
 ## Roadmap
 
-- **v0.1 (this release)** — Walker, per-`ValueType` rules, CLI,
+- **v0.1 (this release)**: Walker, per-`ValueType` rules, CLI,
   audit log, `verify` subcommand, synthetic fixture tests.
-- **v0.2** — Configurable rule plug-ins, structured-error JSON
+- **v0.2**: Configurable rule plug-ins, structured-error JSON
   identical to `dcm-anon`'s.
-- **v0.3** — Optional LLM-backed free-text PHI detection for `TEXT`
+- **v0.3**: Optional LLM-backed free-text PHI detection for `TEXT`
   items (opt-in, local model only, no cloud).
-- **v1.0** — Stable rule-protocol API; semver guarantees.
+- **v1.0**: Stable rule-protocol API; semver guarantees.
 
 ## Audience
 
@@ -254,7 +262,7 @@ Full citation map: [`docs/sr-citation-map.md`](docs/sr-citation-map.md).
 ## Contributing
 
 Open an issue with a real SR (anonymised already, please) that the
-scrubber missed PHI in, or that it over-redacted. PRs welcome —
+scrubber missed PHI in, or that it over-redacted. PRs welcome.
 especially for additional `ValueType` rules and locale-specific PHI
 patterns (Spanish DNI, French INS, German Versichertennummer).
 
