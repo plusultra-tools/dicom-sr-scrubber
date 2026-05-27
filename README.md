@@ -7,7 +7,7 @@
 - **CLI (Free)**. OSS Python CLI, MIT-licensed, recursive SR ContentSequence walk.
 - **Vault add-on (€29/mo)**. Add-on tier inside dcm-anon-vault Phase 2 hosted SaaS: SR scrubbing in the pipeline plus per-item audit log.
 
-[Stripe Payment Link (wiring 2026-05-21)]. See `pricing.md` for tier details.
+Paid tier opens early-access via email; the CLI itself is free under MIT and `pip install dicom-sr-scrubber` works today. See `pricing.md` for tier details and how to request early access.
 
 
 ```bash
