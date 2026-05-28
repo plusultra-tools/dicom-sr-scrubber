@@ -81,7 +81,7 @@ Coming soon: SR scrubbing as a premium add-on inside the `dcm-anon` hosted batch
 > dicom-sr-scrubber v0.1.0 (2026). PHI scrubber for DICOM SR content trees.
 > Implements HIPAA Safe Harbor (45 CFR 164.514(b)(2)) 18-identifier redaction
 > and GDPR Art. 35 audit documentation for DICOM SR SOP Classes.
-> https://github.com/plusultra/dicom-sr-scrubber
+> https://github.com/plusultra-tools/dicom-sr-scrubber
 
 ---
 

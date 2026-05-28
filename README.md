@@ -5,21 +5,21 @@
 ## Pricing
 
 - **CLI (Free)**. OSS Python CLI, MIT-licensed, recursive SR ContentSequence walk.
-- **Vault add-on (€29/mo)**. Add-on tier inside dcm-anon-vault Phase 2 hosted SaaS: SR scrubbing in the pipeline plus per-item audit log.
+- **Vault add-on (€19-29/mo)**. Add-on tier inside dcm-anon-vault Phase 2 hosted SaaS: SR scrubbing in the pipeline plus per-item audit log.
 
 Paid tier opens early-access via email; the CLI itself is free under MIT and `pip install dicom-sr-scrubber` works today. See `pricing.md` for tier details and how to request early access.
 
 
 ```bash
 pip install dicom-sr-scrubber
-dicom-sr-scrub input.dcm output.dcm
+dicom-sr-scrubber --input study_sr/ --out clean_sr/
 ```
 
-Pairs with [dcm-anon](https://github.com/plusultra/dicom-anon-api). The recommended pipeline is:
+Pairs with [dcm-anon](https://github.com/Ces107/dcm-anon) (published on PyPI as `dcm-anonymizer`). The recommended pipeline is:
 
 ```bash
-dcm-anon scrub raw.dcm clean.dcm        # top-level tags + nested sequences
-dicom-sr-scrub clean.dcm final.dcm      # SR content tree
+dcm-anon raw_sr/ stage1_sr/                       # top-level tags + nested sequences
+dicom-sr-scrubber --input stage1_sr/ --out final_sr/   # SR content tree
 ```
 
 ---
@@ -57,39 +57,45 @@ hand-written profiles per institution.
 
 ## What it does
 
-1. `pip install dicom-sr-scrubber`: pure Python, single dependency
-   (`pydicom>=2.4`).
-2. `dicom-sr-scrub scrub input.dcm output.dcm`: recursively walks
-   `ContentSequence`, applies per-`ValueType` PHI rules, writes a new
-   DICOM file with the SR content tree cleaned, leaves all non-SR
-   pixel/metadata untouched.
-3. `dicom-sr-scrub verify output.dcm`: re-parses the scrubbed file and
-   reports whether any PHI pattern survived in the SR content tree.
-   Exit `0` = clean, exit `1` = residual PHI.
-4. Every scrub run emits an **audit log** (JSON) listing every content
-   item visited, its tree path, its `ValueType`, the rule that fired
-   (or `PASS`), and the action taken (`REDACT`, `GENERALIZE_DATE_YEAR`,
-   `STRIP`, `KEEP`). CI-friendly: pipe to `jq`, fail builds on
-   surprises.
+1. `pip install dicom-sr-scrubber`: pure Python, runtime deps
+   `pydicom>=2.4`, `pyyaml>=6.0`, `pydantic>=2.0`.
+2. `dicom-sr-scrubber --input study_sr/ --out clean_sr/`: recursively
+   walks `ContentSequence` on every `.dcm` under `--input`, applies
+   per-`ValueType` PHI rules, writes the scrubbed DICOM files plus a
+   manifest under `--out`. Non-SR pixel/metadata stay untouched. Use
+   `--profile conservative` for IRB-grade aggressiveness (redact all
+   `TEXT` unconditionally + strip `COMPOSITE` references).
+3. `--dry-run` re-uses the same walk but writes only the audit
+   manifest, no scrubbed DICOMs. A standalone `verify` subcommand is
+   on the v0.2 roadmap; today the audit manifest is the residual-PHI
+   evidence trail.
+4. Every run emits a **manifest pair**: `sr_evidence.json` (one entry
+   per content item visited, with tree path, `ValueType`, rule fired,
+   and action: `REDACT`, `GENERALIZE_DATE_YEAR`, `STRIP`, `KEEP`) plus
+   `sr_evidence.md` for IRB/DPIA documentation, plus an `audit.sha256`
+   chain over inputs + outputs + manifest. CI-friendly: pipe the JSON
+   to `jq`, fail builds on surprises.
 
 ## Per-ValueType rules (v0.1)
 
 | ValueType | Default rule | Rationale |
 |---|---|---|
 | `TEXT` | Pattern-match for PHI tokens (names, MRNs, free-form dates, phone, email). Redact span; replace with `[REDACTED]`. | Free-text is the highest-risk surface in SR. |
-| `PNAME` | Always replace with `Anonymous^Anonymous^^^`. | A `PNAME` *is* a person name by definition. |
-| `DATE` | Generalize to year-only (`YYYY0101`). Configurable: `--date-policy={year,strip,keep}`. | HIPAA Safe Harbor permits year for non-elderly subjects; year-only is the common research-grade choice. |
+| `PNAME` | Replace with `Anon{8-hex-hash}^Anon{8-hex-hash}^^^` (deterministic given a fixed `--uid-salt`). | Preserves intra-document PNAME linkability for valid clinical cross-references; loses identity. |
+| `DATE` | Generalize to year-only (`YYYY0101`). | HIPAA Safe Harbor permits year for non-elderly subjects; year-only is the common research-grade choice. Configurable `--date-policy={year,strip,keep}` lands in v0.2. |
 | `TIME` | Strip (`000000.000000`). | Time-of-day is rarely scientifically necessary; high re-identification risk when combined with date. |
 | `CODE` | Keep (coded values are dictionary entries, not PHI). | SNOMED CT / LOINC / RadLex codes are public. |
 | `NUM` | Keep (measurement values are not PHI). | Body temperature `37.0` is not identifying. |
 | `UIDREF` | Replace with deterministic hash-derived UID (same input → same output across runs in the same session). | Preserves referential integrity inside the report; breaks linkability to the source archive. |
-| `COMPOSITE` | Strip the SOPInstanceUID reference (set to placeholder UID). | A reference to the source image series can leak the patient through the receiving PACS. |
+| `COMPOSITE` | Default: keep (preserves referential integrity to the source PACS). Conservative (`--profile conservative`): strip the SOPInstanceUID reference (placeholder UID). | A reference to the source image series can leak the patient through the receiving PACS; keep it only when the source PACS is itself out of scope. |
 | `IMAGE` / `WAVEFORM` / `SCOORD` / `TCOORD` | Keep coordinate / reference fields, strip embedded annotation text if any. | Geometry is not PHI; text overlays may be. |
 | `CONTAINER` | Recurse into child `ContentSequence`. | Containers are structural, not data. |
 
-Rules are pluggable. Drop a Python module implementing the
-`PhiRule` protocol in `~/.config/dicom-sr-scrubber/rules.d/` and it is
-loaded at startup.
+To inject a custom NER detector for `TEXT` items, pass a `ner_hook`
+callable to `dicom_sr_scrubber.scrubber.scrub_files(...)`
+programmatically. See `phi_detect.py:NerHook` for the integration
+contract. File-system rule discovery (`~/.config/dicom-sr-scrubber/rules.d/`)
+is on the v0.3 roadmap and is not wired in v0.1.
 
 ## What it does NOT do
 
@@ -128,9 +134,10 @@ loaded at startup.
 ## Roadmap
 
 - **v0.1 (this release)**: Walker, per-`ValueType` rules, CLI,
-  audit log, `verify` subcommand, synthetic fixture tests.
-- **v0.2**: Configurable rule plug-ins, structured-error JSON
-  identical to `dcm-anon`'s.
+  audit log, synthetic fixture tests.
+- **v0.2**: `verify` subcommand (re-parse scrubbed files and exit
+  non-zero on residual PHI), `--date-policy={year,strip,keep}` flag,
+  structured-error JSON identical to `dcm-anon`'s.
 - **v0.3**: Optional LLM-backed free-text PHI detection for `TEXT`
   items (opt-in, local model only, no cloud).
 - **v1.0**: Stable rule-protocol API; semver guarantees.
@@ -148,9 +155,9 @@ loaded at startup.
 ## Install
 
 ```bash
-pip install dicom-sr-scrubber        # PyPI (once published)
+pip install dicom-sr-scrubber        # PyPI (live: v0.1.0)
 # or from source:
-pip install git+https://github.com/plusultra/dicom-sr-scrubber.git
+pip install git+https://github.com/plusultra-tools/dicom-sr-scrubber.git
 ```
 
 **Requirements**: Python 3.10+, `pydicom>=2.4`, `pyyaml>=6.0`, `pydantic>=2.0`.
@@ -229,7 +236,7 @@ After each run, `--out` contains:
 dicom-sr-scrubber v0.1.0 (2026). PHI scrubber for DICOM Structured Report
 content trees. Implements HIPAA Safe Harbor (45 CFR 164.514(b)(2)) 18-identifier
 redaction and GDPR Art. 35 audit documentation for DICOM SR SOP Classes.
-https://github.com/plusultra/dicom-sr-scrubber
+https://github.com/plusultra-tools/dicom-sr-scrubber
 ```
 
 ## Regulatory citation coverage

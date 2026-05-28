@@ -8,9 +8,9 @@ Tier list. All amounts in EUR, net of VAT. EU B2B reverse-charge applies for val
 
 OSS Python CLI, MIT-licensed, recursive SR ContentSequence walk.
 
-### Vault add-on — €29/mo
+### Vault add-on — €19-29/mo
 
-Add-on tier inside dcm-anon-vault Phase 2 hosted SaaS: SR scrubbing in the pipeline plus per-item audit log.
+Add-on tier inside dcm-anon-vault Phase 2 hosted SaaS: SR scrubbing in the pipeline plus per-item audit log. Price is a range while early-access demand is being measured; the final point inside the range is fixed at the first paid engagement.
 
 ## What's included
 
@@ -34,4 +34,4 @@ B2B EU reverse-charge for validated EU VATIN; out-of-scope for non-EU; deferred 
 
 Stripe recurring monthly subscription. Billed as an add-on inside the existing dcm-anon-vault Phase 2 Stripe account.
 
-Planned Stripe SKU: `dicom-sr-scrubber-addon (upsell tier of dcm-anon-vault Phase 2)`. Stripe Payment Link: wiring scheduled 2026-05-21.
+Planned Stripe SKU: `dicom-sr-scrubber-addon (upsell tier of dcm-anon-vault Phase 2)`. Payment instrument is Stripe recurring (link available on request via `plusultra.dev@proton.me` until the dcm-anon-vault Phase 2 live account is wired).
